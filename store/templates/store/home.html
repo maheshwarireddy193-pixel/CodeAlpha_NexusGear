@@ -1,0 +1,185 @@
+﻿{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}NexusGear | Level Up Your Setup{% endblock %}
+
+{% block content %}
+<!-- HERO BANNER -->
+<section class="hero-banner" id="home-hero-section">
+    <div class="container hero-grid">
+        <div>
+            <span class="hero-tag">Nexus Exclusive Blueprints</span>
+            <h1 class="hero-title">Level Up<br>Your <span>Setup</span></h1>
+            <p class="hero-desc">Engineered for competitive esports supremacy. Equipping professionals with raw, zero-latency mechanical keyboards, lightweight mice, and curved high-refresh displays.</p>
+            <div class="hero-ctas">
+                <a href="{% url 'product_list' %}" class="btn btn-cyan" id="hero-shop-now-btn">Shop Cyber Blueprints</a>
+                <a href="{% url 'product_list' %}?sort=rating" class="btn btn-outline" id="hero-deals-btn">Top Rated Gear</a>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="hero-img-backdrop"></div>
+            <img src="https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&q=80&w=600" alt="Nexus Gaming Mouse" class="hero-img" id="hero-interactive-graphic">
+        </div>
+    </div>
+</section>
+
+<!-- FEATURED CATEGORIES SECTION -->
+<section class="section-wrapper" id="home-categories-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Shop <span>Categories</span></h2>
+            <a href="{% url 'product_list' %}" class="btn btn-outline btn-sm">View All Blueprints</a>
+        </div>
+        <div class="categories-grid" id="home-categories-list">
+            {% for cat in categories %}
+                <a href="{% url 'product_list' %}?category={{ cat.id }}" class="category-card" id="cat-card-{{ cat.id }}">
+                    <div class="category-icon-wrapper">
+                        <img src="{{ cat.image_url }}" alt="{{ cat.name }}">
+                    </div>
+                    <h3 class="category-name">{{ cat.name }}</h3>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- FEATURED PRODUCTS GRID -->
+<section class="section-wrapper section-bg" id="home-featured-products-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Esports <span>Blueprints</span></h2>
+            <a href="{% url 'product_list' %}" class="btn btn-outline btn-sm">Explore Full Armory</a>
+        </div>
+        
+        <div class="products-grid" id="home-featured-grid">
+            {% for prod in featured_products %}
+                <!-- PREMIUM PRODUCT CARD -->
+                <div class="product-card" id="product-card-{{ prod.id }}">
+                    <!-- Card Top Header -->
+                    <div class="product-card-visual">
+                        <!-- Category Badge -->
+                        <span class="card-category-badge">{{ prod.category.name }}</span>
+                        
+                        <!-- Availability Badge -->
+                        {% if prod.stock > 0 %}
+                            <span class="card-stock-badge stock-in">In Stock</span>
+                        {% else %}
+                            <span class="card-stock-badge stock-out">Out of Stock</span>
+                        {% endif %}
+                        
+                        <!-- Wishlist Heart Button -->
+                        {% if user.is_authenticated %}
+                            <div class="card-wishlist-btn js-wishlist-toggle {% if prod.id in wished_ids %}wished{% endif %}" data-product-id="{{ prod.id }}">
+                                {% if prod.id in wished_ids %}
+                                    <i class="fas fa-heart" style="color:var(--color-danger)"></i>
+                                {% else %}
+                                    <i class="far fa-heart"></i>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <a href="{% url 'login' %}?next={% url 'home' %}" class="card-wishlist-btn"><i class="far fa-heart"></i></a>
+                        {% endif %}
+
+                        <!-- Main Image -->
+                        <img src="{{ prod.image_url }}" alt="{{ prod.name }}" class="product-card-img" loading="lazy">
+                        
+                        <!-- Quick View Overlay -->
+                        <div class="card-quickview-overlay">
+                            <a href="{% url 'product_detail' prod.slug %}" class="quickview-btn">Inspect Blueprint</a>
+                        </div>
+                    </div>
+
+                    <!-- Card Body Info -->
+                    <div class="product-card-info">
+                        <span class="product-brand">{{ prod.brand }}</span>
+                        <a href="{% url 'product_detail' prod.slug %}" class="product-name-link">
+                            <h3 class="product-card-name">{{ prod.name }}</h3>
+                        </a>
+                        
+                        <!-- Ratings -->
+                        <div class="rating-wrapper">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="{% if prod.rating >= 4.5 %}fas fa-star-half-alt{% elif prod.rating >= 4.0 %}fas fa-star{% else %}far fa-star{% endif %}"></i>
+                            </div>
+                            <span class="rating-value">{{ prod.rating }} ({{ prod.reviews_count }})</span>
+                        </div>
+
+                        <!-- Price with strike-through discount -->
+                        <div class="price-container">
+                            <span class="price-sale" style="color: var(--color-accent-dim);">₹{{ prod.price }}</span>
+                            {% if prod.original_price > prod.price %}
+                                <span class="price-original">₹{{ prod.original_price }}</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Actions Grid -->
+                        <div class="card-actions-grid">
+                            {% if prod.stock > 0 %}
+                                <button class="btn-card-cart js-add-to-cart" data-product-id="{{ prod.id }}" id="add-to-cart-card-{{ prod.id }}">
+                                    <i class="fas fa-shopping-cart"></i> Cart
+                                </button>
+                                <a href="{% url 'buy_now' prod.id %}" class="btn-card-buy" id="buy-now-card-{{ prod.id }}">
+                                    <i class="fas fa-bolt"></i> Buy Now
+                                </a>
+                            {% else %}
+                                <button class="btn-card-cart" disabled style="grid-column: span 2; opacity: 0.5;">
+                                    Out of Stock
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- SPECIAL DEALS SECTION -->
+<section class="section-wrapper" id="home-deals-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Cyber <span>Deals</span></h2>
+            <span class="toolbar-results">Hyper discounts for the absolute gaming layout</span>
+        </div>
+        <div class="deals-grid" id="home-deals-list">
+            {% for deal in special_deals %}
+                <div class="deal-card" id="deal-card-{{ deal.id }}">
+                    <div class="deal-info">
+                        <span class="deal-badge">{{ deal.discount_percentage }}% OFF</span>
+                        <h3 class="deal-title">{{ deal.name }}</h3>
+                        <div class="deal-price">
+                            <span class="deal-sale-price">₹{{ deal.price }}</span>
+                            <span class="deal-original-price">₹{{ deal.original_price }}</span>
+                        </div>
+                        <a href="{% url 'product_detail' deal.slug %}" class="btn btn-cyan btn-sm">Intercept Deal</a>
+                    </div>
+                    <div class="deal-visual">
+                        <img src="{{ deal.image_url }}" alt="{{ deal.name }}">
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- NEWSLETTER SIGNUP -->
+<section class="newsletter-wrapper" id="home-newsletter-section">
+    <div class="newsletter-backdrop"></div>
+    <div class="container">
+        <div class="newsletter-content">
+            <i class="fas fa-envelope-open-text newsletter-icon"></i>
+            <h2 class="newsletter-title">Subscribe to the Nexus Core</h2>
+            <p class="newsletter-desc">Unlock 10% instant off on your first order. Recieve classified blueprints releases, firmware updates, and esports restock signals.</p>
+            <form action="#" method="POST" class="newsletter-form" id="newsletter-email-form" onsubmit="event.preventDefault(); window.showToast('Subscribed to the Nexus Core! Check your email for your 10% coupon code.', 'success'); this.reset();">
+                <input type="email" placeholder="Enter your cyber address..." class="newsletter-input" required id="newsletter-email-field">
+                <button type="submit" class="newsletter-btn" id="newsletter-submit-btn">Intercept</button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
+

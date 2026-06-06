@@ -1,0 +1,333 @@
+﻿{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}NexusGear | {{ product.name }}{% endblock %}
+
+{% block content %}
+<!-- BREADCRUMBS BREADCRUMB -->
+<div class="breadcrumbs-wrapper" id="detail-breadcrumbs">
+    <div class="container">
+        <div class="breadcrumbs">
+            <a href="{% url 'home' %}" class="breadcrumb-item">Home</a>
+            <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+            <a href="{% url 'product_list' %}?category={{ product.category.id }}" class="breadcrumb-item">{{ product.category.name }}</a>
+            <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+            <span class="breadcrumb-item active">{{ product.name }}</span>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- PRODUCT CORE DETAILS -->
+    <div class="detail-layout" id="product-detail-layout-container">
+        <!-- LEFT: GALLERY IMAGES -->
+        <div class="gallery-wrapper" id="detail-media-gallery">
+            <div class="gallery-main" id="zoom-interactive-container">
+                <img src="{{ product.image_url }}" alt="{{ product.name }}" class="gallery-main-img js-gallery-main" id="main-view-image">
+            </div>
+            
+            <!-- THUMBNAIL PICKER -->
+            <div class="gallery-thumbnails" id="gallery-thumbs-list">
+                <!-- Primary Image Thumbnail -->
+                <div class="gallery-thumb active js-gallery-thumb" data-large-img="{{ product.image_url }}">
+                    <img src="{{ product.image_url }}" alt="Thumbnail Main">
+                </div>
+                <!-- Extra Product Images -->
+                {% for img in product.images.all %}
+                    <div class="gallery-thumb js-gallery-thumb" data-large-img="{{ img.image_url }}">
+                        <img src="{{ img.image_url }}" alt="Thumbnail Angle">
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- RIGHT: SPECIFIC DETAILS -->
+        <div class="detail-info" id="detail-information-panel">
+            <!-- Brand & Availability -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <span class="detail-brand">{{ product.brand }}</span>
+                {% if product.stock > 0 %}
+                    <span class="card-stock-badge stock-in">In Stock ({{ product.stock }} available)</span>
+                {% else %}
+                    <span class="card-stock-badge stock-out">Out of Stock</span>
+                {% endif %}
+            </div>
+            
+            <h1 class="detail-name">{{ product.name }}</h1>
+            
+            <!-- Meta Review Stats -->
+            <div class="detail-meta">
+                <div class="rating-wrapper" style="margin-bottom: 0;">
+                    <div class="stars" style="font-size: 15px;">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="{% if product.rating >= 4.5 %}fas fa-star-half-alt{% elif product.rating >= 4.0 %}fas fa-star{% else %}far fa-star{% endif %}"></i>
+                    </div>
+                    <span class="rating-value" style="font-size: 14px; font-weight: 700; color: var(--color-text-dark);">{{ product.rating }} out of 5</span>
+                </div>
+                <span style="color: var(--color-text-muted); font-size: 14px; font-weight: 500;">| &nbsp;&nbsp;&nbsp;{{ product.reviews_count }} verified reviews</span>
+            </div>
+
+            <!-- Price with Savings Math -->
+            <div class="detail-price-box">
+                <span class="detail-price-sale" style="color: var(--color-accent-dim);">₹{{ product.price }}</span>
+                {% if product.original_price > product.price %}
+                    <span class="detail-price-original">₹{{ product.original_price }}</span>
+                    <span class="detail-discount-pill">Save {{ product.discount_percentage }}%</span>
+                {% endif %}
+            </div>
+
+            <p class="detail-description">{{ product.description }}</p>
+
+            <!-- Quantity Selector & Action row -->
+            {% if product.stock > 0 %}
+                <div class="detail-options-row" id="detail-options-selection">
+                    <!-- Qty Counter -->
+                    <div class="quantity-selector">
+                        <button class="qty-btn js-qty-minus" id="qty-decrement-btn">-</button>
+                        <input type="text" value="1" class="qty-input js-qty-input" readonly id="quantity-number-field">
+                        <button class="qty-btn js-qty-plus" id="qty-increment-btn">+</button>
+                    </div>
+
+                    <!-- Cart Trigger -->
+                    <button class="btn btn-cyan btn-block js-add-to-cart" data-product-id="{{ product.id }}" id="add-to-cart-detail-btn" style="flex: 2; height: 48px;">
+                        <i class="fas fa-shopping-cart"></i> Add to Drawer
+                    </button>
+                </div>
+
+                <!-- Buy Now Fast Action -->
+                <div style="display: flex; gap: 15px; margin-bottom: 40px;" id="detail-fast-checkout-actions">
+                    <a href="{% url 'buy_now' product.id %}" class="btn btn-primary btn-block" style="background-color: var(--bg-dark); color: var(--color-text-light); height: 48px;" id="buy-now-detail-btn">
+                        <i class="fas fa-bolt" style="color: var(--color-accent)"></i> Buy Blueprint Now
+                    </a>
+                    
+                    {% if user.is_authenticated %}
+                        <button class="btn btn-outline js-wishlist-toggle {% if product.id in wished_ids %}wished{% endif %}" data-product-id="{{ product.id }}" id="wishlist-detail-btn" style="width: 60px; height: 48px; padding: 0;">
+                            {% if product.id in wished_ids %}
+                                <i class="fas fa-heart" style="color:var(--color-danger)"></i>
+                            {% else %}
+                                <i class="far fa-heart"></i>
+                            {% endif %}
+                        </button>
+                    {% else %}
+                        <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-outline" style="width: 60px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center;"><i class="far fa-heart"></i></a>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div style="display: flex; gap: 15px; margin-bottom: 40px;">
+                    <button class="btn btn-outline btn-block" disabled style="opacity: 0.6; height: 48px;">
+                        Currently Out of Stock
+                    </button>
+                    {% if user.is_authenticated %}
+                        <button class="btn btn-outline js-wishlist-toggle {% if product.id in wished_ids %}wished{% endif %}" data-product-id="{{ product.id }}" style="width: 60px; height: 48px; padding: 0;">
+                            {% if product.id in wished_ids %}
+                                <i class="fas fa-heart" style="color:var(--color-danger)"></i>
+                            {% else %}
+                                <i class="far fa-heart"></i>
+                            {% endif %}
+                        </button>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- TABS SECTION -->
+    <div class="tabs-wrapper" id="detail-tabs-section">
+        <div class="tabs-header">
+            <button class="tab-btn active js-tab-btn" data-pane="tab-desc" id="tab-btn-description">Full Overview</button>
+            <button class="tab-btn js-tab-btn" data-pane="tab-specs" id="tab-btn-specifications">Specifications</button>
+            <button class="tab-btn js-tab-btn" data-pane="tab-reviews" id="tab-btn-reviews">Customer Reviews ({{ product.reviews_count }})</button>
+        </div>
+
+        <!-- Description Tab -->
+        <div class="tab-pane active js-tab-pane" id="tab-desc">
+            <h3 class="filter-title" style="font-size: 20px; margin-bottom: 16px;">Product Engineering Design</h3>
+            <p class="detail-description" style="max-width: 800px; font-size: 16px;">{{ product.description }}</p>
+        </div>
+
+        <!-- Specifications Tab -->
+        <div class="tab-pane js-tab-pane" id="tab-specs">
+            <h3 class="filter-title" style="font-size: 20px; margin-bottom: 20px;">Technical Blueprint Specifications</h3>
+            {% if specs_list %}
+                <table class="specs-table" id="technical-specifications-table">
+                    <tbody>
+                        {% for k, v in specs_list %}
+                            <tr>
+                                <td class="spec-key">{{ k }}</td>
+                                <td class="spec-val">{{ v }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="detail-description">No specifications details available for this blueprint.</p>
+            {% endif %}
+        </div>
+
+        <!-- Reviews Tab -->
+        <div class="tab-pane js-tab-pane" id="tab-reviews">
+            <div class="reviews-container" id="detail-reviews-list-container">
+                {% if reviews %}
+                    {% for rev in reviews %}
+                        <div class="review-item" id="review-row-{{ rev.id }}">
+                            <div class="review-item-header">
+                                <div class="review-user-info">
+                                    <img src="{{ rev.user.profile.get_avatar }}" alt="{{ rev.user.username }}" class="review-user-avatar">
+                                    <div>
+                                        <h4 class="review-user-name">{{ rev.user.first_name|default:rev.user.username }}</h4>
+                                        {% if rev.is_verified_buyer %}
+                                            <span class="review-verified-badge"><i class="fas fa-check-circle"></i> Verified Buyer</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="review-date">{{ rev.created_at|date:"d M Y" }}</div>
+                            </div>
+                            
+                            <div class="rating-wrapper">
+                                <div class="stars">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= rev.rating %}
+                                            <i class="fas fa-star"></i>
+                                        {% else %}
+                                            <i class="far fa-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <p class="review-comment">"{{ rev.comment }}"</p>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; padding: 40px 0; color: var(--color-text-muted);" id="detail-reviews-empty">
+                        <i class="far fa-comments" style="font-size: 40px; margin-bottom: 12px; opacity: 0.5;"></i>
+                        <p>No reviews have been published for this blueprint yet.</p>
+                    </div>
+                {% endif %}
+                
+                <!-- Review Posting Form -->
+                {% if user.is_authenticated %}
+                    {% if has_purchased and not already_reviewed %}
+                        <div class="review-form-card" id="detail-review-form-panel">
+                            <h3 class="review-form-title">Submit Verified Review</h3>
+                            <form action="{% url 'add_review' product.slug %}" method="POST" id="post-review-form">
+                                {% csrf_token %}
+                                
+                                <div class="review-rating-select-wrapper">
+                                    <span class="review-rating-label">Rating:</span>
+                                    <div class="rating-select-stars">
+                                        <input type="radio" name="rating" id="star5" value="5" required><label for="star5" title="5 stars"><i class="fas fa-star"></i></label>
+                                        <input type="radio" name="rating" id="star4" value="4"><label for="star4" title="4 stars"><i class="fas fa-star"></i></label>
+                                        <input type="radio" name="rating" id="star3" value="3"><label for="star3" title="3 stars"><i class="fas fa-star"></i></label>
+                                        <input type="radio" name="rating" id="star2" value="2"><label for="star2" title="2 stars"><i class="fas fa-star"></i></label>
+                                        <input type="radio" name="rating" id="star1" value="1"><label for="star1" title="1 star"><i class="fas fa-star"></i></label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="comment-field">Review Comments</label>
+                                    <textarea name="comment" rows="4" class="form-control" placeholder="Share your experience using this gaming blueprint..." required id="comment-field"></textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-cyan btn-sm" id="post-review-btn">Publish Review</button>
+                            </form>
+                        </div>
+                    {% elif already_reviewed %}
+                        <div class="review-form-card" style="background-color: var(--color-border); text-align: center;" id="detail-already-reviewed-card">
+                            <p style="font-weight: 600; color: var(--color-text-dark);"><i class="fas fa-info-circle"></i> You have already reviewed this blueprint.</p>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- RELATED PRODUCTS SECTION -->
+    {% if related_products %}
+        <section class="section-wrapper" id="detail-related-section" style="border-top: 1px solid var(--color-border); margin-top: 80px; padding-bottom: 0;">
+            <div class="section-header">
+                <h2 class="section-title">Related <span>Blueprints</span></h2>
+            </div>
+            
+            <div class="products-grid" id="detail-related-grid">
+                {% for prod in related_products %}
+                    <!-- PREMIUM PRODUCT CARD -->
+                    <div class="product-card" id="product-card-{{ prod.id }}">
+                        <div class="product-card-visual">
+                            <span class="card-category-badge">{{ prod.category.name }}</span>
+                            
+                            {% if prod.stock > 0 %}
+                                <span class="card-stock-badge stock-in">In Stock</span>
+                            {% else %}
+                                <span class="card-stock-badge stock-out">Out of Stock</span>
+                            {% endif %}
+                            
+                            {% if user.is_authenticated %}
+                                <div class="card-wishlist-btn js-wishlist-toggle {% if prod.id in wished_ids %}wished{% endif %}" data-product-id="{{ prod.id }}">
+                                    {% if prod.id in wished_ids %}
+                                        <i class="fas fa-heart" style="color:var(--color-danger)"></i>
+                                    {% else %}
+                                        <i class="far fa-heart"></i>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <a href="{% url 'login' %}?next={{ request.path }}" class="card-wishlist-btn"><i class="far fa-heart"></i></a>
+                            {% endif %}
+
+                            <img src="{{ prod.image_url }}" alt="{{ prod.name }}" class="product-card-img" loading="lazy">
+                            
+                            <div class="card-quickview-overlay">
+                                <a href="{% url 'product_detail' prod.slug %}" class="quickview-btn">Inspect Blueprint</a>
+                            </div>
+                        </div>
+
+                        <div class="product-card-info">
+                            <span class="product-brand">{{ prod.brand }}</span>
+                            <a href="{% url 'product_detail' prod.slug %}" class="product-name-link">
+                                <h3 class="product-card-name">{{ prod.name }}</h3>
+                            </a>
+                            
+                            <div class="rating-wrapper">
+                                <div class="stars">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="{% if prod.rating >= 4.5 %}fas fa-star-half-alt{% elif prod.rating >= 4.0 %}fas fa-star{% else %}far fa-star{% endif %}"></i>
+                                </div>
+                                <span class="rating-value">{{ prod.rating }} ({{ prod.reviews_count }})</span>
+                            </div>
+
+                            <div class="price-container">
+                                <span class="price-sale" style="color: var(--color-accent-dim);">₹{{ prod.price }}</span>
+                                {% if prod.original_price > prod.price %}
+                                    <span class="price-original">₹{{ prod.original_price }}</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="card-actions-grid">
+                                {% if prod.stock > 0 %}
+                                    <button class="btn-card-cart js-add-to-cart" data-product-id="{{ prod.id }}" id="add-to-cart-card-{{ prod.id }}">
+                                        <i class="fas fa-shopping-cart"></i> Cart
+                                    </button>
+                                    <a href="{% url 'buy_now' prod.id %}" class="btn-card-buy" id="buy-now-card-{{ prod.id }}">
+                                        <i class="fas fa-bolt"></i> Buy Now
+                                    </a>
+                                {% else %}
+                                    <button class="btn-card-cart" disabled style="grid-column: span 2; opacity: 0.5;">
+                                        Out of Stock
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
+</div>
+{% endblock %}
+

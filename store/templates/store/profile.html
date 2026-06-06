@@ -1,0 +1,405 @@
+﻿{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}NexusGear | My Control Dashboard{% endblock %}
+
+{% block content %}
+<!-- BREADCRUMBS BREADCRUMB -->
+<div class="breadcrumbs-wrapper" id="profile-breadcrumbs">
+    <div class="container">
+        <div class="breadcrumbs">
+            <a href="{% url 'home' %}" class="breadcrumb-item">Home</a>
+            <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+            <span class="breadcrumb-item active">User Control Dashboard</span>
+        </div>
+    </div>
+</div>
+
+<div class="container" style="padding-bottom: 80px;">
+    <div class="profile-layout" id="profile-layout-container">
+        <!-- LEFT: SIDEBAR -->
+        <aside class="profile-sidebar" id="profile-sidebar-panel">
+            <div class="profile-avatar-wrapper">
+                <img src="{{ profile.get_avatar }}" alt="{{ user.username }}" class="profile-avatar-img" id="profile-avatar-display">
+                <!-- Avatar File Input Form -->
+                <form action="{% url 'profile' %}" method="POST" enctype="multipart/form-data" id="avatar-form" style="display: none;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_profile">
+                    <input type="hidden" name="full_name" value="{{ user.first_name }} {{ user.last_name }}">
+                    <input type="hidden" name="email" value="{{ user.email }}">
+                    <input type="hidden" name="phone" value="{{ profile.phone|default:'' }}">
+                    <input type="file" name="profile_picture" id="avatar-file-input" onchange="document.getElementById('avatar-form').submit()">
+                </form>
+                <label for="avatar-file-input" class="profile-avatar-upload" title="Upload custom avatar image">
+                    <i class="fas fa-camera"></i>
+                </label>
+            </div>
+            
+            <h2 class="profile-name">{{ user.first_name|default:user.username }}</h2>
+            <p class="profile-email">System Operator: @{{ user.username }}</p>
+            
+            <!-- Menu Navigation Tabs -->
+            <div class="profile-menu-list">
+                <button class="profile-menu-btn active js-profile-tab-btn" data-pane="pane-details" id="menu-btn-details">
+                    <i class="fas fa-cog"></i> Account Settings
+                </button>
+                <button class="profile-menu-btn js-profile-tab-btn" data-pane="pane-addresses" id="menu-btn-addresses">
+                    <i class="fas fa-map-marker-alt"></i> Shipping Profiles
+                </button>
+                <button class="profile-menu-btn js-profile-tab-btn" data-pane="pane-orders" id="menu-btn-orders">
+                    <i class="fas fa-history"></i> Order History
+                </button>
+            </div>
+        </aside>
+
+        <!-- RIGHT: PANELS -->
+        <main id="profile-panels-panel" style="min-width: 0;">
+            <!-- Tab 1: Account details & passwords -->
+            <div class="tab-pane active js-profile-tab-pane" id="pane-details">
+                <div class="cart-table-card" style="padding: 30px; margin-bottom: 30px;" id="profile-settings-card">
+                    <h3 class="filter-title" style="font-size: 18px; border-bottom: 1px solid var(--color-border); padding-bottom: 12px; margin-bottom: 20px;">
+                        Profile Core Configuration
+                    </h3>
+                    <form action="" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_profile">
+                        
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="full_name" value="{{ user.first_name }} {{ user.last_name }}" class="form-control" required id="profile-full-name">
+                        </div>
+
+                        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <label class="form-label">Email Address</label>
+                                <input type="email" name="email" value="{{ user.email }}" class="form-control" required id="profile-email">
+                            </div>
+                            <div>
+                                <label class="form-label">Phone Number</label>
+                                <input type="text" name="phone" value="{{ profile.phone|default:'' }}" placeholder="No phone saved" class="form-control" id="profile-phone">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-cyan btn-sm" id="profile-save-details-btn">Save Configurations</button>
+                    </form>
+                </div>
+
+                <div class="cart-table-card" style="padding: 30px;" id="profile-password-card">
+                    <h3 class="filter-title" style="font-size: 18px; border-bottom: 1px solid var(--color-border); padding-bottom: 12px; margin-bottom: 20px; color: var(--color-danger);">
+                        Update Operator Access Code (Password)
+                    </h3>
+                    <form action="" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="change_password">
+                        
+                        <div class="form-group">
+                            <label class="form-label">Current Access Password</label>
+                            <input type="password" name="old_password" placeholder="Enter old password" class="form-control" required id="pass-old">
+                        </div>
+
+                        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <label class="form-label">New Access Password</label>
+                                <input type="password" name="new_password" placeholder="Min 6 characters" class="form-control" required id="pass-new">
+                            </div>
+                            <div>
+                                <label class="form-label">Confirm New Password</label>
+                                <input type="password" name="confirm_new_password" placeholder="Re-enter new password" class="form-control" required id="pass-confirm">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-cyan btn-sm" style="background-color: var(--color-danger); border-color: var(--color-danger); color: white;" id="profile-save-password-btn">Change Access Code</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tab 2: Saved address list -->
+            <div class="tab-pane js-profile-tab-pane" id="pane-addresses">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h3 class="filter-title" style="font-size: 20px; margin-bottom: 0;">Shipping Blueprint Destinations</h3>
+                    <button class="btn btn-cyan btn-sm js-open-address-modal" data-action="add" id="profile-add-address-btn">
+                        <i class="fas fa-plus"></i> New Destination
+                    </button>
+                </div>
+
+                {% if addresses %}
+                    <div class="address-grid" id="profile-addresses-grid">
+                        {% for addr in addresses %}
+                            <div class="address-card" id="address-card-{{ addr.id }}">
+                                {% if addr.is_default %}
+                                    <span class="address-badge">Default Target</span>
+                                {% endif %}
+                                <h4 style="font-weight: 700; font-size: 16px; margin-bottom: 8px;">{{ addr.full_name }}</h4>
+                                <p style="font-size: 14px; color: var(--color-text-muted); line-height: 1.6; margin-bottom: 12px;">
+                                    {{ addr.address_line }},<br>
+                                    {{ addr.city }}, {{ addr.state }} - {{ addr.pincode }}
+                                </p>
+                                <span style="font-size: 13px; font-weight: 600; color: var(--color-text-dark); display: block;">Phone: {{ addr.phone }}</span>
+                                
+                                <div class="address-actions">
+                                    <span class="address-action-btn js-open-address-modal" 
+                                          data-action="edit" 
+                                          data-id="{{ addr.id }}"
+                                          data-name="{{ addr.full_name }}"
+                                          data-phone="{{ addr.phone }}"
+                                          data-line="{{ addr.address_line }}"
+                                          data-city="{{ addr.city }}"
+                                          data-state="{{ addr.state }}"
+                                          data-pin="{{ addr.pincode }}"
+                                          data-default="{{ addr.is_default|yesno:'true,false' }}">
+                                        <i class="far fa-edit"></i> Edit
+                                    </span>
+                                    <a href="{% url 'delete_address' addr.id %}" class="address-action-btn delete" onclick="return confirm('Eject this destination target?');">
+                                        <i class="far fa-trash-alt"></i> Delete
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-bag-card" id="profile-addresses-empty">
+                        <i class="fas fa-map-marked-alt empty-bag-icon"></i>
+                        <h2 class="confirm-title">No Shipping Profiles Registered</h2>
+                        <p class="confirm-desc" style="max-width: 450px; margin: 10px auto 24px auto;">You haven't registered any default target destinations yet. Register a destination profile for express checkouts!</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Tab 3: Order History list -->
+            <div class="tab-pane js-profile-tab-pane" id="pane-orders">
+                <h3 class="filter-title" style="font-size: 20px; margin-bottom: 24px;">Blueprint Assembly Log</h3>
+                
+                {% if orders %}
+                    <div class="cart-table-card" id="profile-orders-table-panel">
+                        <table class="data-table" id="profile-orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Assembly ID</th>
+                                    <th>Order Date</th>
+                                    <th>Method</th>
+                                    <th>Total Value</th>
+                                    <th>Status Log</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ord in orders %}
+                                    <tr id="order-row-{{ ord.order_id }}">
+                                        <td><strong style="color: var(--color-accent-dim);">{{ ord.order_id }}</strong></td>
+                                        <td>{{ ord.created_at|date:"d M Y" }}</td>
+                                        <td>{{ ord.get_payment_method_display }}</td>
+                                        <td><strong style="color: var(--color-text-dark);">₹{{ ord.total_amount }}</strong></td>
+                                        <td>
+                                            <span class="order-status-badge 
+                                                {% if ord.status == 'Placed' %}status-placed
+                                                {% elif ord.status == 'Confirmed' %}status-confirmed
+                                                {% elif ord.status == 'Packed' %}status-packed
+                                                {% elif ord.status == 'Shipped' %}status-shipped
+                                                {% else %}status-delivered{% endif %}">
+                                                {{ ord.status }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <!-- Reactive collapsible triggers details drawer -->
+                                            <button class="btn btn-outline btn-sm js-toggle-order-detail" data-target="order-details-{{ ord.order_id }}">
+                                                Details
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <!-- Expandable Order detail panel drawer -->
+                                    <tr id="order-details-{{ ord.order_id }}" class="order-detail-drawer-row" style="display: none; background-color: var(--bg-secondary);">
+                                        <td colspan="6" style="padding: 24px;">
+                                            <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 30px;">
+                                                <!-- Left: list items -->
+                                                <div>
+                                                    <h4 style="font-size: 14px; font-weight: 700; border-bottom:1px solid var(--color-border); padding-bottom: 8px; margin-bottom: 12px;">Items Packed</h4>
+                                                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                                                        {% for item in ord.items.all %}
+                                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                                <div style="display: flex; align-items: center; gap: 8px;">
+                                                                    <img src="{{ item.product_image }}" alt="" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px;">
+                                                                    <span style="font-size: 13px; font-weight: 700; color: var(--color-text-dark);">
+                                                                        {{ item.product_name }} <span style="font-weight: 500; color: var(--color-text-muted);">x{{ item.quantity }}</span>
+                                                                    </span>
+                                                                </div>
+                                                                <span style="font-size: 13px; font-weight: 700; color: var(--color-accent-dim);">₹{{ item.total_price }}</span>
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                                <!-- Right: shipping details -->
+                                                <div style="font-size: 13px;">
+                                                    <h4 style="font-size: 14px; font-weight: 700; border-bottom:1px solid var(--color-border); padding-bottom: 8px; margin-bottom: 12px;">Logistics details</h4>
+                                                    <span style="display: block; margin-bottom: 6px;"><strong>Recipient:</strong> {{ ord.full_name }}</span>
+                                                    <span style="display: block; margin-bottom: 6px;"><strong>Destination:</strong> {{ ord.address_line }}, {{ ord.city }}, {{ ord.state }} - {{ ord.pincode }}</span>
+                                                    <span style="display: block; margin-bottom: 6px;"><strong>Contact:</strong> {{ ord.phone }}</span>
+                                                    <span style="display: block; margin-bottom: 6px;"><strong>Est. Arrival:</strong> {{ ord.expected_delivery|date:"d M Y" }}</span>
+                                                    <a href="{% url 'order_tracking' %}?order_id={{ ord.order_id }}" class="btn btn-cyan btn-sm btn-block" style="margin-top: 15px; text-align: center;">
+                                                        <i class="fas fa-map-marker-alt"></i> Visual Tracking Portal
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-bag-card" id="profile-orders-empty">
+                        <i class="fas fa-history empty-bag-icon"></i>
+                        <h2 class="confirm-title">No blueprint Assembly Records</h2>
+                        <p class="confirm-desc" style="max-width: 450px; margin: 10px auto 24px auto;">You haven't ordered any premium hardware blueprints yet. Launch your catalog to build your setup!</p>
+                        <a href="{% url 'product_list' %}" class="btn btn-cyan" id="profile-orders-shop-btn">Shop Esports Blueprints</a>
+                    </div>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- FLOATING MODAL OVERLAY FOR SHIPPING DESTINATIONS -->
+<div class="modal-overlay js-address-modal-overlay" id="address-crud-modal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3 class="modal-title" id="address-modal-title-text">Add Target Destination</h3>
+            <i class="fas fa-times modal-close js-close-address-modal" id="address-modal-close-icon"></i>
+        </div>
+        <div class="modal-body">
+            <form action="{% url 'add_address' %}" method="POST" id="address-modal-form">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="full_name" placeholder="Enter recipient full name" class="form-control" required id="modal-field-name">
+                </div>
+
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label class="form-label">Phone Number</label>
+                        <input type="text" name="phone" placeholder="Recipient phone" class="form-control" required id="modal-field-phone">
+                    </div>
+                    <div>
+                        <label class="form-label">Pincode</label>
+                        <input type="text" name="pincode" placeholder="6-digit zip" class="form-control" required id="modal-field-pincode">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Street Address</label>
+                    <textarea name="address_line" rows="3" placeholder="Flat, building, street address details..." class="form-control" required id="modal-field-line"></textarea>
+                </div>
+
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label class="form-label">City</label>
+                        <input type="text" name="city" placeholder="City" class="form-control" required id="modal-field-city">
+                    </div>
+                    <div>
+                        <label class="form-label">State</label>
+                        <input type="text" name="state" placeholder="State" class="form-control" required id="modal-field-state">
+                    </div>
+                </div>
+
+                <label class="filter-checkbox-label" style="margin-top: 15px; margin-bottom: 24px;">
+                    <input type="checkbox" name="is_default" class="filter-checkbox" id="modal-field-default">
+                    <span>Set this destination target as default</span>
+                </label>
+
+                <button type="submit" class="btn btn-cyan btn-block" id="modal-submit-btn">Save Shipping Destination</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Tab switches for Account Dashboard panels
+    const tabBtns = document.querySelectorAll('.js-profile-tab-btn');
+    const panes = document.querySelectorAll('.js-profile-tab-pane');
+    
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabBtns.forEach(b => b.classList.remove('active'));
+            panes.forEach(p => p.classList.remove('active'));
+            
+            btn.classList.add('active');
+            const targetId = btn.dataset.pane;
+            document.getElementById(targetId).classList.add('active');
+        });
+    });
+
+    // 2. Expandable order details row triggers
+    const toggleBtns = document.querySelectorAll('.js-toggle-order-detail');
+    toggleBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.dataset.target;
+            const drawer = document.getElementById(targetId);
+            if (drawer) {
+                const isOpen = drawer.style.display !== 'none';
+                drawer.style.display = isOpen ? 'none' : 'table-row';
+                btn.textContent = isOpen ? 'Details' : 'Close';
+                btn.style.backgroundColor = isOpen ? 'transparent' : 'var(--bg-dark)';
+                btn.style.color = isOpen ? 'var(--color-text-dark)' : 'var(--color-text-light)';
+            }
+        });
+    });
+
+    // 3. Address CRUD popup overlay modal managers
+    const modal = document.getElementById('address-crud-modal');
+    const modalTitle = document.getElementById('address-modal-title-text');
+    const modalForm = document.getElementById('address-modal-form');
+    
+    const openBtns = document.querySelectorAll('.js-open-address-modal');
+    const closeBtn = document.getElementById('address-modal-close-icon');
+
+    openBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const action = btn.dataset.action;
+            
+            if (action === 'add') {
+                modalTitle.textContent = 'Add Target Destination';
+                modalForm.action = "{% url 'add_address' %}";
+                modalForm.reset();
+                document.getElementById('modal-field-default').checked = false;
+            } else if (action === 'edit') {
+                modalTitle.textContent = 'Edit Target Destination';
+                const id = btn.dataset.id;
+                modalForm.action = `/profile/address/edit/${id}/`;
+                
+                // Pre-fill modal details
+                document.getElementById('modal-field-name').value = btn.dataset.name;
+                document.getElementById('modal-field-phone').value = btn.dataset.phone;
+                document.getElementById('modal-field-pincode').value = btn.dataset.pin;
+                document.getElementById('modal-field-line').value = btn.dataset.line;
+                document.getElementById('modal-field-city').value = btn.dataset.city;
+                document.getElementById('modal-field-state').value = btn.dataset.state;
+                document.getElementById('modal-field-default').checked = btn.dataset.default === 'true';
+            }
+            
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+    });
+
+    // Close Modal triggers
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+    }
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+});
+</script>
+{% endblock %}
+

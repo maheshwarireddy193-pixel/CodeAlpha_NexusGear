@@ -1,0 +1,96 @@
+﻿{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}NexusGear | Order Placed Successfully{% endblock %}
+
+{% block content %}
+<!-- PROGRESS STEPS BAR (Completed Done State) -->
+<div class="container">
+    <div class="progress-steps" id="checkout-stepper-success" style="max-width: 600px; margin: 40px auto 40px auto;">
+        <div class="step-item completed">1<span class="step-label">Cart</span></div>
+        <div class="step-item completed">2<span class="step-label">Details</span></div>
+        <div class="step-item completed">3<span class="step-label">Payment</span></div>
+        <div class="step-item completed active">
+            <i class="fas fa-check"></i>
+            <span class="step-label">Done</span>
+        </div>
+    </div>
+</div>
+
+<div class="container" style="padding-bottom: 80px;">
+    <div class="success-layout" id="order-success-panel">
+        <!-- Visual checkmark -->
+        <div class="checkmark-container" id="success-checkmark-circle">
+            <i class="fas fa-check"></i>
+        </div>
+
+        <h1 class="success-title">Order Confirmed!</h1>
+        <p class="detail-description" style="margin-bottom: 24px;">Your order has been loaded into our system. We are assembling your elite hardware blueprints now.</p>
+
+        <!-- Order Code Box -->
+        <div class="success-order-id-box" id="success-id-box">
+            <span>Tracking Reference ID:</span>
+            <div class="success-order-id">{{ order.order_id }}</div>
+        </div>
+
+        <!-- Receipt Card Breakdown -->
+        <div class="cart-table-card" style="text-align: left; padding: 30px; margin-bottom: 40px; box-shadow: var(--shadow-sm);" id="success-receipt-card">
+            <h3 class="filter-title" style="font-size: 18px; border-bottom: 1px solid var(--color-border); padding-bottom: 12px; margin-bottom: 16px;">
+                Order Summary Receipt
+            </h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; font-size: 14px;">
+                <div>
+                    <strong style="color: var(--color-text-dark); display: block; margin-bottom: 4px;">Shipping Destination</strong>
+                    <span style="color: var(--color-text-muted);">
+                        {{ order.full_name }}<br>
+                        {{ order.address_line }}, {{ order.city }}, {{ order.state }} - {{ order.pincode }}<br>
+                        Phone: {{ order.phone }}
+                    </span>
+                </div>
+                <div>
+                    <strong style="color: var(--color-text-dark); display: block; margin-bottom: 4px;">Logistics & Billing</strong>
+                    <span style="color: var(--color-text-muted);">
+                        Method: {{ order.get_payment_method_display }}<br>
+                        Status: <span style="font-weight: 700; color: var(--color-accent-dim);">{{ order.payment_status }}</span><br>
+                        Delivery Expected: <span style="font-weight: 700; color: var(--color-text-dark);">{{ order.expected_delivery|date:"d M Y" }}</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Items -->
+            <div style="border-top: 1px solid var(--color-border); padding-top: 16px;">
+                <strong style="color: var(--color-text-dark); display: block; margin-bottom: 12px;">Purchased Gaming Gear</strong>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    {% for item in order.items.all %}
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <img src="{{ item.product_image }}" alt="{{ item.product_name }}" style="width: 44px; height: 44px; object-fit: cover; border-radius: 4px; border: 1px solid var(--color-border);">
+                                <span style="font-weight: 700; font-size: 14px; color: var(--color-text-dark);">
+                                    {{ item.product_name }} <span style="font-weight: 500; color: var(--color-text-muted);">x{{ item.quantity }}</span>
+                                </span>
+                            </div>
+                            <span style="font-weight: 700; font-size: 14px; color: var(--color-accent-dim);">₹{{ item.total_price }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Totals -->
+            <div style="border-top: 1px solid var(--color-border); margin-top: 20px; padding-top: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <strong style="font-size: 16px;">Total Paid</strong>
+                <strong style="font-size: 20px; color: var(--color-accent-dim);">₹{{ order.total_amount }}</strong>
+            </div>
+        </div>
+
+        <!-- Action CTAs -->
+        <div class="success-actions">
+            <a href="{% url 'order_tracking' %}?order_id={{ order.order_id }}" class="btn btn-cyan" id="success-track-btn">
+                <i class="fas fa-map-marker-alt"></i> Track Blueprint Assembly
+            </a>
+            <a href="{% url 'product_list' %}" class="btn btn-outline" id="success-continue-btn">Continue Shopping</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,222 @@
+﻿{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}NexusGear | Secure Checkout{% endblock %}
+
+{% block content %}
+<!-- PROGRESS STEPS BAR -->
+<div class="container">
+    <div class="progress-steps" id="checkout-stepper">
+        <div class="step-item completed" id="step-1">
+            <i class="fas fa-check"></i>
+            <span class="step-label">Cart</span>
+        </div>
+        <div class="step-item active" id="step-2">
+            2
+            <span class="step-label">Details</span>
+        </div>
+        <div class="step-item" id="step-3">
+            3
+            <span class="step-label">Payment</span>
+        </div>
+        <div class="step-item" id="step-4">
+            4
+            <span class="step-label">Done</span>
+        </div>
+    </div>
+</div>
+
+<div class="container" style="padding-bottom: 80px;">
+    <form action="" method="POST" id="checkout-billing-form">
+        {% csrf_token %}
+        <div class="cart-layout" id="checkout-layout-grid">
+            <!-- LEFT: SHIPPING & PAYMENT DETAILS -->
+            <div style="display: flex; flex-direction: column; gap: 30px;" id="checkout-forms-panel">
+                <!-- 1. Shipping Section -->
+                <div class="cart-table-card" style="padding: 30px;" id="shipping-address-card">
+                    <h3 class="filter-title" style="font-size: 20px; border-bottom: 1px solid var(--color-border); padding-bottom: 15px; margin-bottom: 20px;">
+                        <i class="fas fa-truck" style="color: var(--color-accent-dim);"></i> Shipping Blueprints Address
+                    </h3>
+
+                    <!-- Saved Address Selection -->
+                    {% if saved_addresses %}
+                        <div class="form-group">
+                            <label class="form-label" for="address-selector">Select Shipping Profile</label>
+                            <select class="form-control js-address-select" name="address_selection" id="address-selector">
+                                {% for addr in saved_addresses %}
+                                    <option value="{{ addr.id }}" {% if addr.is_default %}selected{% endif %}>
+                                        {{ addr.full_name }} ({{ addr.city }}, {{ addr.pincode }}) - Default Profile
+                                    </option>
+                                {% endfor %}
+                                <option value="new">-- Ship to a New Address --</option>
+                            </select>
+                        </div>
+                    {% endif %}
+
+                    <!-- New Address Form Fields -->
+                    <div class="js-new-address-fields" id="new-shipping-form-fields">
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="full_name" placeholder="Enter recipient full name" class="form-control" id="shipping-full-name">
+                        </div>
+
+                        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <label class="form-label">Phone Number</label>
+                                <input type="text" name="phone" placeholder="Enter recipient phone" class="form-control" id="shipping-phone">
+                            </div>
+                            <div>
+                                <label class="form-label">Pincode / Zip</label>
+                                <input type="text" name="pincode" placeholder="Enter 6-digit zip" class="form-control" id="shipping-pincode">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Street Address</label>
+                            <textarea name="address_line" rows="3" placeholder="Enter flat/room number and street names..." class="form-control" id="shipping-address-line"></textarea>
+                        </div>
+
+                        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <label class="form-label">City</label>
+                                <input type="text" name="city" placeholder="City" class="form-control" id="shipping-city">
+                            </div>
+                            <div>
+                                <label class="form-label">State</label>
+                                <input type="text" name="state" placeholder="State" class="form-control" id="shipping-state">
+                            </div>
+                        </div>
+
+                        <!-- Option to save -->
+                        <label class="filter-checkbox-label" style="margin-top: 15px;">
+                            <input type="checkbox" name="save_address" class="filter-checkbox" checked id="shipping-save-profile">
+                            <span>Save this address profile for future blueprint orders</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 2. Payment Section -->
+                <div class="cart-table-card" style="padding: 30px;" id="payment-gateways-card">
+                    <h3 class="filter-title" style="font-size: 20px; border-bottom: 1px solid var(--color-border); padding-bottom: 15px; margin-bottom: 20px;">
+                        <i class="fas fa-credit-card" style="color: var(--color-accent-dim);"></i> Secure Payment Gateway Selector
+                    </h3>
+
+                    <div class="payment-selector" id="payment-methods-radio-list">
+                        <!-- COD Option -->
+                        <div class="payment-option-card active js-payment-option" id="pay-opt-cod">
+                            <input type="radio" name="payment_method" value="COD" class="payment-radio" checked id="radio-cod">
+                            <div class="payment-label-info">
+                                <h4 class="payment-title">Cash on Delivery (COD)</h4>
+                                <p class="payment-desc">Pay with cash upon receipt of shipping packaging. No extra processing fees.</p>
+                            </div>
+                        </div>
+
+                        <!-- Mock Credit Card Option -->
+                        <div class="payment-option-card js-payment-option" id="pay-opt-card">
+                            <input type="radio" name="payment_method" value="Card" class="payment-radio" id="radio-card">
+                            <div class="payment-label-info">
+                                <h4 class="payment-title">Credit / Debit Card Gateway</h4>
+                                <p class="payment-desc">Pay instantly using major secure cards. Encrypted mock-processing.</p>
+                                <span class="mock-payment-label"><i class="fas fa-vial"></i> Mock Payment — For Demo Purposes Only</span>
+                                
+                                <!-- Card Fields (Shown dynamically) -->
+                                <div class="mock-form-section js-payment-card-form" id="mock-card-form-fields" style="display: none;">
+                                    <div class="form-group">
+                                        <label class="form-label">Card Number</label>
+                                        <input type="text" placeholder="1111-2222-3333-4444" class="form-control" id="mock-card-number">
+                                    </div>
+                                    <div class="form-group" style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+                                        <div>
+                                            <label class="form-label">Cardholder Name</label>
+                                            <input type="text" placeholder="Name on card" class="form-control" id="mock-card-name">
+                                        </div>
+                                        <div>
+                                            <label class="form-label">CVV</label>
+                                            <input type="password" placeholder="123" maxlength="3" class="form-control" id="mock-card-cvv">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mock UPI Option -->
+                        <div class="payment-option-card js-payment-option" id="pay-opt-upi">
+                            <input type="radio" name="payment_method" value="UPI" class="payment-radio" id="radio-upi">
+                            <div class="payment-label-info">
+                                <h4 class="payment-title">Unified Payments Interface (UPI)</h4>
+                                <p class="payment-desc">Pay with instant wireless mobile apps (GPay, PhonePe, BHIM). instant verification.</p>
+                                <span class="mock-payment-label"><i class="fas fa-vial"></i> Mock Payment — For Demo Purposes Only</span>
+                                
+                                <!-- UPI Fields -->
+                                <div class="mock-form-section js-payment-upi-form" id="mock-upi-form-fields" style="display: none;">
+                                    <div class="form-group">
+                                        <label class="form-label">UPI ID Address</label>
+                                        <input type="text" placeholder="username@pay-app" class="form-control" id="mock-upi-id">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: ORDER SUMMARY -->
+            <div class="summary-card" id="checkout-summary-panel">
+                <h3 class="summary-title">Checkout Inventory</h3>
+                
+                <!-- Items list -->
+                <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; border-bottom: 1px solid var(--color-border); padding-bottom: 20px;">
+                    {% for item in items %}
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                                <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
+                                <div style="font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">
+                                    {{ item.product.name }}
+                                </div>
+                            </div>
+                            <span style="font-size: 13px; color: var(--color-text-muted); font-weight: 600;">
+                                {{ item.quantity }} x ₹{{ item.product.price }}
+                            </span>
+                            <span style="font-size: 13px; font-weight: 700; color: var(--color-text-dark);">
+                                ₹{{ item.total_price }}
+                            </span>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="summary-rows" style="border: none; padding: 0; margin-bottom: 24px;">
+                    <div class="summary-row">
+                        <span>Blueprints Subtotal</span>
+                        <span style="font-weight: 600;">₹{{ subtotal }}</span>
+                    </div>
+                    {% if discount_amount > 0 %}
+                        <div class="summary-row" style="color: var(--color-success);">
+                            <span>Discount Applied ({{ coupon.code }})</span>
+                            <span>-₹{{ discount_amount }}</span>
+                        </div>
+                    {% endif %}
+                    <div class="summary-row">
+                        <span>Shipping Logistics</span>
+                        <span style="color: var(--color-success); font-weight: 700;">FREE SECURE</span>
+                    </div>
+                    <div class="summary-row total" style="padding-top: 16px;">
+                        <span>Grand Total</span>
+                        <span style="color: var(--color-accent-dim); font-size: 20px;">₹{{ total_amount }}</span>
+                    </div>
+                </div>
+
+                <!-- Hidden inputs if this is buy_now -->
+                {% if buy_now_id %}
+                    <input type="hidden" name="buy_now" value="{{ buy_now_id }}">
+                    <input type="hidden" name="buy_now_qty" value="{{ buy_now_qty }}">
+                {% endif %}
+
+                <button type="submit" class="btn btn-cyan btn-block" id="checkout-place-order-btn">
+                    <i class="fas fa-check-circle"></i> Place My Blueprint Order
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

@@ -1,0 +1,247 @@
+﻿{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NexusGear | Premium Gaming Shop{% endblock %}</title>
+    
+    <!-- Meta Descriptions for SEO -->
+    <meta name="description" content="Level up your gaming setup with NexusGear. Shop high-end gaming mice, mechanical keyboards, spatial audio headsets, and premium ergonomics.">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="{% static 'store/css/styles.css' %}">
+    
+    <!-- Google Fonts & FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- STICKY NAVBAR -->
+    <div class="header-wrapper">
+        <nav class="navbar" id="main-navbar">
+            <!-- Brand Logo -->
+            <a href="{% url 'home' %}" class="logo-container" id="nav-logo">
+                <div class="logo-text">NEXUS<span>GEAR</span></div>
+            </a>
+
+            <!-- Live Search Bar -->
+            <div class="search-wrapper">
+                <form action="{% url 'product_list' %}" method="GET" class="search-form" id="navbar-search-form">
+                    <input type="text" name="q" value="{{ q|default:'' }}" placeholder="Search gaming gear..." class="search-input js-search-input" id="search-query-field" autocomplete="off">
+                    <button type="submit" class="search-btn" id="search-submit-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+                <!-- Search Suggestions Dropdown -->
+                <div class="search-dropdown js-search-dropdown" id="search-auto-results"></div>
+            </div>
+
+            <!-- Navbar Actions -->
+            <div class="navbar-actions">
+                <!-- Search Icon (for mobile screens if hidden) -->
+                <a href="{% url 'product_list' %}" class="action-icon mobile-hamburger-search" style="display: none;">
+                    <i class="fas fa-search"></i>
+                </a>
+
+                <!-- Wishlist Badge -->
+                <a href="{% url 'wishlist' %}" class="action-icon" id="nav-wishlist-link">
+                    <i class="far fa-heart"></i>
+                    <span class="icon-badge js-wishlist-badge" id="wishlist-count-badge" style="{% if global_wishlist_count == 0 %}display: none;{% endif %}">{{ global_wishlist_count }}</span>
+                </a>
+
+                <!-- Cart Side Drawer Trigger -->
+                <div class="action-icon js-open-cart" id="nav-cart-link">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="icon-badge js-cart-badge" id="cart-count-badge" style="{% if global_cart_count == 0 %}display: none;{% endif %}">{{ global_cart_count }}</span>
+                </div>
+
+                <!-- User profile dropdown / Login registration buttons -->
+                {% if user.is_authenticated %}
+                    <a href="{% url 'profile' %}" class="navbar-user-btn" id="nav-profile-menu">
+                        <img src="{{ user.profile.get_avatar }}" alt="{{ user.username }}" class="navbar-avatar">
+                        <span class="navbar-username">{{ user.first_name|default:user.username }}</span>
+                    </a>
+                    <a href="{% url 'logout' %}" class="action-icon" title="Logout" id="nav-logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="auth-link" id="nav-login-btn">Login</a>
+                    <a href="{% url 'register' %}" class="auth-link auth-link-primary" id="nav-register-btn">Register</a>
+                {% endif %}
+
+                <!-- Mobile Hamburger icon -->
+                <i class="fas fa-bars mobile-hamburger js-mobile-hamburger" id="nav-mobile-menu-btn"></i>
+            </div>
+        </nav>
+    </div>
+
+    <!-- MOBILE NAVIGATION MENU -->
+    <div class="mobile-nav-menu js-mobile-nav-menu" id="mobile-navigation-links">
+        <a href="{% url 'home' %}" class="mobile-nav-link">Home</a>
+        <a href="{% url 'product_list' %}" class="mobile-nav-link">All Products</a>
+        <a href="{% url 'wishlist' %}" class="mobile-nav-link">Wishlist</a>
+        <a href="{% url 'cart' %}" class="mobile-nav-link">Cart</a>
+        {% if user.is_authenticated %}
+            <a href="{% url 'profile' %}" class="mobile-nav-link">My Profile</a>
+            <a href="{% url 'logout' %}" class="mobile-nav-link">Logout</a>
+        {% else %}
+            <a href="{% url 'login' %}" class="mobile-nav-link">Login</a>
+            <a href="{% url 'register' %}" class="mobile-nav-link">Register</a>
+        {% endif %}
+    </div>
+
+    <!-- MAIN BODY CONTENT -->
+    <main style="flex: 1;">
+        {% if messages %}
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    {% for message in messages %}
+                        window.showToast("{{ message|escapejs }}", "{{ message.tags|default:'info' }}");
+                    {% endfor %}
+                });
+            </script>
+        {% endif %}
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer-wrapper">
+        <div class="container">
+            <div class="footer-grid">
+                <!-- Brand details -->
+                <div>
+                    <div class="footer-brand-logo">NEXUS<span>GEAR</span></div>
+                    <p class="footer-brand-desc">Engineered for elite performance. Experience raw, zero-latency gaming supremacy with NexusGear gear blueprints.</p>
+                    <div class="footer-socials">
+                        <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+
+                <!-- Quick links -->
+                <div>
+                    <h3 class="footer-section-title">Shop Category</h3>
+                    <ul class="footer-links-list">
+                        <li><a href="{% url 'product_list' %}?category=1" class="footer-link">Gaming Mice</a></li>
+                        <li><a href="{% url 'product_list' %}?category=2" class="footer-link">Mechanical Keyboards</a></li>
+                        <li><a href="{% url 'product_list' %}?category=3" class="footer-link">Pro Audio Headsets</a></li>
+                        <li><a href="{% url 'product_list' %}?category=4" class="footer-link">Curved Gaming Monitors</a></li>
+                    </ul>
+                </div>
+
+                <!-- Info links -->
+                <div>
+                    <h3 class="footer-section-title">Quick Help</h3>
+                    <ul class="footer-links-list">
+                        <li><a href="{% url 'order_tracking' %}" class="footer-link">Track Your Order</a></li>
+                        <li><a href="{% url 'profile' %}" class="footer-link">My Account Dashboard</a></li>
+                        <li><a href="{% url 'wishlist' %}" class="footer-link">My Wishlist Blueprints</a></li>
+                        <li><a href="{% url 'product_list' %}" class="footer-link">Filter Catalog</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact details -->
+                <div>
+                    <h3 class="footer-section-title">Nexus Headquarters</h3>
+                    <ul class="footer-contact-list">
+                        <li>
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>404 Cyber Neon Boulevard, Sector 7, Neo Tokyo</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-phone-alt"></i>
+                            <span>+81 (03) 555-NEXUS</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-envelope"></i>
+                            <span>support@nexusgear.demo</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Footer Bottom -->
+            <div class="footer-bottom">
+                <div class="footer-copy">&copy; 2026 NexusGear Premium Shop. Built with absolute full-stack supremacy. For Demo Purposes Only.</div>
+                <div class="footer-payments">
+                    <i class="fab fa-cc-visa"></i>
+                    <i class="fab fa-cc-mastercard"></i>
+                    <i class="fab fa-cc-paypal"></i>
+                    <i class="fab fa-cc-apple-pay"></i>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ASYNC CART SLIDE DRAWER OVERLAY -->
+    <div class="cart-drawer-overlay js-cart-overlay" id="global-shopping-cart-drawer">
+        <div class="cart-drawer" id="cart-drawer-body">
+            <div class="cart-drawer-header">
+                <div class="cart-drawer-title">
+                    <i class="fas fa-shopping-bag"></i> SHOPPING BLUEPRINTS <span>({{ global_cart_count }})</span>
+                </div>
+                <i class="fas fa-times cart-drawer-close js-close-cart" id="close-drawer-icon"></i>
+            </div>
+            
+            <div class="cart-drawer-body">
+                {% if global_cart_items %}
+                    <div class="drawer-items-list" id="drawer-items-ul">
+                        {% for item in global_cart_items %}
+                            <div class="drawer-item" id="drawer-item-row-{{ item.id }}">
+                                <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="drawer-item-img">
+                                <div class="drawer-item-info">
+                                    <h4 class="drawer-item-name">{{ item.product.name }}</h4>
+                                    <p class="drawer-item-qty-price">{{ item.quantity }} x <span>₹{{ item.product.price }}</span></p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="drawer-empty-state" id="drawer-empty-state-card">
+                        <i class="fas fa-shopping-bag drawer-empty-icon"></i>
+                        <p>Your shopping drawer is empty.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="cart-drawer-footer" style="{% if not global_cart_items %}display: none;{% endif %}" id="drawer-footer-card">
+                <div class="drawer-summary-row">
+                    <div class="drawer-summary-label">Estimated Subtotal</div>
+                    <div class="drawer-summary-value js-drawer-subtotal" id="drawer-subtotal-val">₹{{ global_cart_subtotal }}</div>
+                </div>
+                <div class="drawer-actions">
+                    <a href="{% url 'cart' %}" class="btn btn-outline btn-block" id="drawer-view-cart-btn">View Shopping Cart</a>
+                    <a href="{% url 'checkout' %}" class="btn btn-cyan btn-block" id="drawer-checkout-btn">Proceed to Secure Checkout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BACK TO TOP BUTTON -->
+    <div class="back-to-top js-back-to-top" id="scroll-to-top-btn">
+        <i class="fas fa-chevron-up"></i>
+    </div>
+
+    <!-- CONFIRMATION DIALOG OVERLAY MODAL -->
+    <div class="confirm-overlay" id="custom-confirmation-modal">
+        <div class="confirm-box">
+            <h3 class="confirm-title" id="confirm-box-title">Confirm Deletion</h3>
+            <p class="confirm-desc" id="confirm-box-description">Are you sure you want to delete this blueprint from your inventory?</p>
+            <div class="confirm-buttons">
+                <button class="btn btn-outline btn-sm js-confirm-cancel" id="confirm-cancel-btn">Abort</button>
+                <button class="btn btn-cyan btn-sm js-confirm-ok" id="confirm-ok-btn" style="background-color: var(--color-danger); border-color: var(--color-danger); color: white;">Confirm Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Javascript -->
+    <script src="{% static 'store/js/main.js' %}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
+

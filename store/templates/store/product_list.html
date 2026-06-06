@@ -1,0 +1,243 @@
+﻿{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}NexusGear | Esports Armory Blueprint Catalog{% endblock %}
+
+{% block content %}
+<!-- BREADCRUMBS BREADCRUMB -->
+<div class="breadcrumbs-wrapper" id="catalog-breadcrumbs">
+    <div class="container">
+        <div class="breadcrumbs">
+            <a href="{% url 'home' %}" class="breadcrumb-item">Home</a>
+            <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+            <span class="breadcrumb-item active">Esports Armory Catalog</span>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="catalog-layout" id="catalog-layout-grid">
+        <!-- FILTER SIDEBAR -->
+        <aside class="filter-sidebar" id="catalog-sidebar-panel">
+            <form action="{% url 'product_list' %}" method="GET" id="filter-sidebar-form">
+                <!-- Keep search query if present -->
+                {% if q %}
+                    <input type="hidden" name="q" value="{{ q }}">
+                {% endif %}
+                
+                <!-- Category Filter -->
+                <div class="filter-section">
+                    <h3 class="filter-title">Category</h3>
+                    <div class="filter-list">
+                        <label class="filter-checkbox-label">
+                            <input type="radio" name="category" value="" class="filter-checkbox" {% if not selected_category %}checked{% endif %} onchange="this.form.submit()">
+                            <span>All Categories</span>
+                        </label>
+                        {% for cat in categories %}
+                            <label class="filter-checkbox-label">
+                                <input type="radio" name="category" value="{{ cat.id }}" class="filter-checkbox" {% if selected_category == cat.id|stringformat:"i" %}checked{% endif %} onchange="this.form.submit()">
+                                <span>{{ cat.name }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Brand Filter -->
+                <div class="filter-section">
+                    <h3 class="filter-title">Brand</h3>
+                    <div class="filter-list">
+                        <label class="filter-checkbox-label">
+                            <input type="radio" name="brand" value="" class="filter-checkbox" {% if not selected_brand %}checked{% endif %} onchange="this.form.submit()">
+                            <span>All Brands</span>
+                        </label>
+                        {% for br in brands %}
+                            <label class="filter-checkbox-label">
+                                <input type="radio" name="brand" value="{{ br }}" class="filter-checkbox" {% if selected_brand == br %}checked{% endif %} onchange="this.form.submit()">
+                                <span>{{ br }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Price Range Filter -->
+                <div class="filter-section">
+                    <h3 class="filter-title">Price Range</h3>
+                    <div class="price-range-inputs">
+                        <input type="number" name="min_price" value="{{ min_price|default:'' }}" placeholder="Min" class="price-input" id="filter-min-price">
+                        <span class="price-divider">-</span>
+                        <input type="number" name="max_price" value="{{ max_price|default:'' }}" placeholder="Max" class="price-input" id="filter-max-price">
+                    </div>
+                </div>
+
+                <!-- Ratings Filter -->
+                <div class="filter-section">
+                    <h3 class="filter-title">Minimum Rating</h3>
+                    <div class="filter-list">
+                        <label class="filter-checkbox-label">
+                            <input type="radio" name="rating" value="" class="filter-checkbox" {% if not selected_rating %}checked{% endif %} onchange="this.form.submit()">
+                            <span>Any Rating</span>
+                        </label>
+                        {% for r in "432" %}
+                            <label class="filter-checkbox-label">
+                                <input type="radio" name="rating" value="{{ r }}" class="filter-checkbox" {% if selected_rating == r %}checked{% endif %} onchange="this.form.submit()">
+                                <span>{{ r }}★ & Above</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Availability Filter -->
+                <div class="filter-section">
+                    <h3 class="filter-title">Stock Status</h3>
+                    <div class="filter-list">
+                        <label class="filter-checkbox-label">
+                            <input type="checkbox" name="stock" value="in_stock" class="filter-checkbox" {% if selected_stock == 'in_stock' %}checked{% endif %} onchange="this.form.submit()">
+                            <span>In Stock Only</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Form Action Buttons -->
+                <div class="filter-section" style="border: none; padding: 0;">
+                    <button type="submit" class="btn btn-cyan btn-sm btn-block" style="margin-bottom: 10px;" id="filter-apply-btn">Apply Filters</button>
+                    <a href="{% url 'product_list' %}" class="btn btn-outline btn-sm btn-block" style="text-align: center;" id="filter-clear-btn">Clear All Filters</a>
+                </div>
+            </form>
+        </aside>
+
+        <!-- PRODUCTS AREA -->
+        <main id="catalog-products-panel">
+            <!-- Toolbar bar -->
+            <div class="catalog-toolbar" id="catalog-toolbar-panel">
+                <div class="toolbar-results" id="catalog-results-count">
+                    Showing <span>{{ products.start_index }}-{{ products.end_index }}</span> of <span>{{ products.paginator.count }}</span> Cyber Blueprints
+                    {% if q %}
+                        for "<strong>{{ q }}</strong>"
+                    {% endif %}
+                </div>
+                
+                <div class="toolbar-sort-wrapper">
+                    <span class="sort-label">Sort By:</span>
+                    <!-- Sort Selection binds to main filter triggers -->
+                    <select class="sort-select" id="catalog-sort-select" onchange="const url = new URL(window.location.href); url.searchParams.set('sort', this.value); window.location.href = url.href;">
+                        <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>New Launches</option>
+                        <option value="price-low-high" {% if selected_sort == 'price-low-high' %}selected{% endif %}>Price: Low to High</option>
+                        <option value="price-high-low" {% if selected_sort == 'price-high-low' %}selected{% endif %}>Price: High to Low</option>
+                        <option value="rating" {% if selected_sort == 'rating' %}selected{% endif %}>Top Rated</option>
+                    </select>
+                </div>
+            </div>
+
+            {% if products %}
+                <!-- GRID OF CARDS -->
+                <div class="products-grid" id="catalog-products-grid">
+                    {% for prod in products %}
+                        <!-- PREMIUM PRODUCT CARD -->
+                        <div class="product-card" id="product-card-{{ prod.id }}">
+                            <div class="product-card-visual">
+                                <span class="card-category-badge">{{ prod.category.name }}</span>
+                                
+                                {% if prod.stock > 0 %}
+                                    <span class="card-stock-badge stock-in">In Stock</span>
+                                {% else %}
+                                    <span class="card-stock-badge stock-out">Out of Stock</span>
+                                {% endif %}
+                                
+                                {% if user.is_authenticated %}
+                                    <div class="card-wishlist-btn js-wishlist-toggle {% if prod.id in wished_ids %}wished{% endif %}" data-product-id="{{ prod.id }}">
+                                        {% if prod.id in wished_ids %}
+                                            <i class="fas fa-heart" style="color:var(--color-danger)"></i>
+                                        {% else %}
+                                            <i class="far fa-heart"></i>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <a href="{% url 'login' %}?next={% url 'product_list' %}" class="card-wishlist-btn"><i class="far fa-heart"></i></a>
+                                {% endif %}
+
+                                <img src="{{ prod.image_url }}" alt="{{ prod.name }}" class="product-card-img" loading="lazy">
+                                
+                                <div class="card-quickview-overlay">
+                                    <a href="{% url 'product_detail' prod.slug %}" class="quickview-btn">Inspect Blueprint</a>
+                                </div>
+                            </div>
+
+                            <div class="product-card-info">
+                                <span class="product-brand">{{ prod.brand }}</span>
+                                <a href="{% url 'product_detail' prod.slug %}" class="product-name-link">
+                                    <h3 class="product-card-name">{{ prod.name }}</h3>
+                                </a>
+                                
+                                <div class="rating-wrapper">
+                                    <div class="stars">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="{% if prod.rating >= 4.5 %}fas fa-star-half-alt{% elif prod.rating >= 4.0 %}fas fa-star{% else %}far fa-star{% endif %}"></i>
+                                    </div>
+                                    <span class="rating-value">{{ prod.rating }} ({{ prod.reviews_count }})</span>
+                                </div>
+
+                                <div class="price-container">
+                                    <span class="price-sale" style="color: var(--color-accent-dim);">₹{{ prod.price }}</span>
+                                    {% if prod.original_price > prod.price %}
+                                        <span class="price-original">₹{{ prod.original_price }}</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="card-actions-grid">
+                                    {% if prod.stock > 0 %}
+                                        <button class="btn-card-cart js-add-to-cart" data-product-id="{{ prod.id }}" id="add-to-cart-card-{{ prod.id }}">
+                                            <i class="fas fa-shopping-cart"></i> Cart
+                                        </button>
+                                        <a href="{% url 'buy_now' prod.id %}" class="btn-card-buy" id="buy-now-card-{{ prod.id }}">
+                                            <i class="fas fa-bolt"></i> Buy Now
+                                        </a>
+                                    {% else %}
+                                        <button class="btn-card-cart" disabled style="grid-column: span 2; opacity: 0.5;">
+                                            Out of Stock
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- PAGINATION CONTROLS -->
+                {% if products.has_other_pages %}
+                    <div class="pagination-wrapper" id="catalog-pagination">
+                        <div class="pagination">
+                            {% if products.has_previous %}
+                                <a href="?{% if q %}q={{ q }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_brand %}brand={{ selected_brand }}&{% endif %}{% if min_price %}min_price={{ min_price }}&{% endif %}{% if max_price %}max_price={{ max_price }}&{% endif %}{% if selected_rating %}rating={{ selected_rating }}&{% endif %}{% if selected_stock %}stock={{ selected_stock }}&{% endif %}sort={{ selected_sort }}&page={{ products.previous_page_number }}" class="page-link"><i class="fas fa-chevron-left"></i></a>
+                            {% endif %}
+
+                            {% for num in products.paginator.page_range %}
+                                {% if products.number == num %}
+                                    <span class="page-link active">{{ num }}</span>
+                                {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+                                    <a href="?{% if q %}q={{ q }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_brand %}brand={{ selected_brand }}&{% endif %}{% if min_price %}min_price={{ min_price }}&{% endif %}{% if max_price %}max_price={{ max_price }}&{% endif %}{% if selected_rating %}rating={{ selected_rating }}&{% endif %}{% if selected_stock %}stock={{ selected_stock }}&{% endif %}sort={{ selected_sort }}&page={{ num }}" class="page-link">{{ num }}</a>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if products.has_next %}
+                                <a href="?{% if q %}q={{ q }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_brand %}brand={{ selected_brand }}&{% endif %}{% if min_price %}min_price={{ min_price }}&{% endif %}{% if max_price %}max_price={{ max_price }}&{% endif %}{% if selected_rating %}rating={{ selected_rating }}&{% endif %}{% if selected_stock %}stock={{ selected_stock }}&{% endif %}sort={{ selected_sort }}&page={{ products.next_page_number }}" class="page-link"><i class="fas fa-chevron-right"></i></a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <!-- Empty search/filter matches -->
+                <div class="empty-bag-card" id="catalog-empty-bag-card">
+                    <i class="fas fa-search-minus empty-bag-icon"></i>
+                    <h2 class="confirm-title">No gaming blueprints match your filters</h2>
+                    <p class="confirm-desc" style="max-width: 450px; margin: 10px auto 24px auto;">Try clearing some filters, modifying your search, or adjusting your price limits to find gear.</p>
+                    <a href="{% url 'product_list' %}" class="btn btn-cyan" id="catalog-empty-reset-btn">Reset All Filters</a>
+                </div>
+            {% endif %}
+        </main>
+    </div>
+</div>
+{% endblock %}
+

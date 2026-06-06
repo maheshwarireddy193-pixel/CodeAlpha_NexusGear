@@ -1,0 +1,177 @@
+﻿{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}NexusGear | My Saved Blueprints{% endblock %}
+
+{% block content %}
+<!-- BREADCRUMBS BREADCRUMB -->
+<div class="breadcrumbs-wrapper" id="wishlist-breadcrumbs">
+    <div class="container">
+        <div class="breadcrumbs">
+            <a href="{% url 'home' %}" class="breadcrumb-item">Home</a>
+            <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+            <span class="breadcrumb-item active">My Saved Blueprints</span>
+        </div>
+    </div>
+</div>
+
+<div class="container" style="padding-bottom: 80px;">
+    <h1 class="section-title" style="margin-top: 40px; margin-bottom: 30px;">My Saved <span>Blueprints</span></h1>
+
+    {% if wishlist_items %}
+        <div class="products-grid js-wishlist-grid" id="wishlist-grid-panel">
+            {% for item in wishlist_items %}
+                <!-- SAVED PRODUCT CARD -->
+                <div class="product-card js-wishlist-card" id="wishlist-card-{{ item.product.id }}" data-product-id="{{ item.product.id }}">
+                    <div class="product-card-visual">
+                        <span class="card-category-badge">{{ item.product.category.name }}</span>
+                        
+                        <!-- Wishlist Toggle (Active heart) -->
+                        <div class="card-wishlist-btn js-wishlist-toggle wished" data-product-id="{{ item.product.id }}">
+                            <i class="fas fa-heart" style="color:var(--color-danger)"></i>
+                        </div>
+
+                        <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="product-card-img" loading="lazy">
+                        
+                        <div class="card-quickview-overlay">
+                            <a href="{% url 'product_detail' item.product.slug %}" class="quickview-btn">Inspect Blueprint</a>
+                        </div>
+                    </div>
+
+                    <div class="product-card-info">
+                        <span class="product-brand">{{ item.product.brand }}</span>
+                        <a href="{% url 'product_detail' item.product.slug %}" class="product-name-link">
+                            <h3 class="product-card-name">{{ item.product.name }}</h3>
+                        </a>
+                        
+                        <div class="rating-wrapper">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="{% if item.product.rating >= 4.5 %}fas fa-star-half-alt{% elif item.product.rating >= 4.0 %}fas fa-star{% else %}far fa-star{% endif %}"></i>
+                            </div>
+                            <span class="rating-value">{{ item.product.rating }}</span>
+                        </div>
+
+                        <div class="price-container">
+                            <span class="price-sale" style="color: var(--color-accent-dim);">₹{{ item.product.price }}</span>
+                            {% if item.product.original_price > item.product.price %}
+                                <span class="price-original">₹{{ item.product.original_price }}</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Custom wishlist page action triggers -->
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto;">
+                            {% if item.product.stock > 0 %}
+                                <button class="btn btn-cyan btn-sm js-wishlist-move-cart" data-product-id="{{ item.product.id }}" id="move-to-cart-{{ item.product.id }}">
+                                    <i class="fas fa-shopping-cart"></i> Move to Cart
+                                </button>
+                                <a href="{% url 'buy_now' item.product.id %}" class="btn btn-primary btn-sm" style="background-color: var(--bg-dark); color: var(--color-text-light); text-align: center;" id="wishlist-buy-now-{{ item.product.id }}">
+                                    <i class="fas fa-bolt" style="color: var(--color-accent)"></i> Buy Now
+                                </a>
+                            {% else %}
+                                <button class="btn btn-outline btn-sm" disabled style="opacity: 0.5;">
+                                    Out of Stock
+                                </button>
+                            {% endif %}
+                            
+                            <button class="btn btn-outline btn-sm js-wishlist-toggle" data-product-id="{{ item.product.id }}" style="border-color: rgba(255, 71, 87, 0.3); color: var(--color-danger);" id="wishlist-remove-{{ item.product.id }}">
+                                <i class="far fa-trash-alt"></i> Eject Saved
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- EMPTY WISHLIST STATE -->
+        <div class="empty-bag-card" id="wishlist-empty-card">
+            <i class="far fa-heart empty-bag-icon"></i>
+            <h2 class="confirm-title" style="font-size: 24px;">Your Saved Blueprints Armory is Empty</h2>
+            <p class="confirm-desc" style="max-width: 450px; margin: 10px auto 24px auto;">You haven't saved any hardware blueprints for your dynamic layout setup yet. Explore our featured grids to bookmark products!</p>
+            <a href="{% url 'product_list' %}" class="btn btn-cyan" id="wishlist-shop-now-btn">Shop Esports Blueprints</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Handle 'Move to Cart' button click asynchronously
+    const grid = document.getElementById('wishlist-grid-panel');
+    if (grid) {
+        grid.addEventListener('click', async (e) => {
+            const moveBtn = e.target.closest('.js-wishlist-move-cart');
+            if (!moveBtn) return;
+            
+            e.preventDefault();
+            const productId = moveBtn.dataset.productId;
+            
+            // Visual loading state
+            const originalHTML = moveBtn.innerHTML;
+            moveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Moving...';
+            moveBtn.disabled = true;
+            
+            try {
+                // 1. Add to Cart via AJAX
+                const cartResponse = await fetch(`/api/cart/add/?product_id=${productId}&qty=1`);
+                const cartData = await cartResponse.json();
+                
+                if (cartData.success) {
+                    // Update Cart navbar badge
+                    const cartBadge = document.querySelector('.js-cart-badge');
+                    if (cartBadge) {
+                        cartBadge.textContent = cartData.cart_count;
+                        cartBadge.style.display = cartData.cart_count > 0 ? 'flex' : 'none';
+                    }
+                    
+                    // Refresh cart drawer list
+                    window.refreshDrawerItems(cartData.items, cartData.cart_subtotal);
+                    
+                    // 2. Remove from Wishlist via AJAX
+                    const wishResponse = await fetch(`/api/wishlist/toggle/?product_id=${productId}`);
+                    const wishData = await wishResponse.json();
+                    
+                    if (wishData.success) {
+                        // Update Wishlist navbar badge
+                        const wishBadge = document.querySelector('.js-wishlist-badge');
+                        if (wishBadge) {
+                            wishBadge.textContent = wishData.wishlist_count;
+                            wishBadge.style.display = wishData.wishlist_count > 0 ? 'flex' : 'none';
+                        }
+                        
+                        // Fade card out from listing
+                        const card = document.getElementById(`wishlist-card-${productId}`);
+                        card.style.transition = 'all 0.4s ease-out';
+                        card.style.opacity = '0';
+                        card.style.transform = 'scale(0.9)';
+                        
+                        setTimeout(() => {
+                            card.remove();
+                            // If empty, reload page to show empty visual
+                            if (grid.children.length === 0) {
+                                window.location.reload();
+                            }
+                        }, 400);
+                        
+                        window.showToast("Blueprint successfully moved to your shopping cart!", 'success');
+                    }
+                } else {
+                    window.showToast(cartData.message, 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                window.showToast('Something went wrong.', 'error');
+            } finally {
+                moveBtn.innerHTML = originalHTML;
+                moveBtn.disabled = false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,75 @@
+﻿{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}NexusGear | Register Operator Profile{% endblock %}
+
+{% block content %}
+<div class="auth-layout" id="register-layout-wrapper">
+    <div class="auth-card" id="register-card-panel" style="max-width: 520px;">
+        <div class="auth-header">
+            <h1 class="auth-title">Operator <span>Register</span></h1>
+            <p class="auth-subtitle">Create your Nexus Control Profile Blueprint</p>
+        </div>
+
+        <form action="" method="POST" id="register-form-element" onsubmit="return validateRegisterForm()">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label class="form-label" for="register-fullname-field">Full Name</label>
+                <input type="text" name="full_name" placeholder="Enter first and last name" class="form-control" required id="register-fullname-field" autofocus>
+            </div>
+
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <label class="form-label" for="register-username-field">Username</label>
+                    <input type="text" name="username" placeholder="e.g. cyber_operator" class="form-control" required id="register-username-field" autocomplete="username">
+                </div>
+                <div>
+                    <label class="form-label" for="register-email-field">Email Address</label>
+                    <input type="email" name="email" placeholder="operator@domain.com" class="form-control" required id="register-email-field">
+                </div>
+            </div>
+
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <label class="form-label" for="register-password-field">Access Password</label>
+                    <input type="password" name="password" placeholder="Min 6 characters" class="form-control" required id="register-password-field" autocomplete="new-password">
+                </div>
+                <div>
+                    <label class="form-label" for="register-confirm-field">Confirm Password</label>
+                    <input type="password" name="confirm_password" placeholder="Re-enter password" class="form-control" required id="register-confirm-field" autocomplete="new-password">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-cyan btn-block" style="margin-top: 20px;" id="register-submit-btn">Compile Profile Blueprint</button>
+        </form>
+
+        <div class="auth-form-footer">
+            <span>Already Registered Operator? </span>
+            <a href="{% url 'login' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}" id="register-login-redirect-link">Authorize Portal Login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function validateRegisterForm() {
+    const pass = document.getElementById('register-password-field').value;
+    const confirm = document.getElementById('register-confirm-field').value;
+    
+    if (pass.length < 6) {
+        window.showToast("Access Password must be at least 6 characters.", "error");
+        return false;
+    }
+    
+    if (pass !== confirm) {
+        window.showToast("Passwords do not match.", "error");
+        return false;
+    }
+    
+    return true;
+}
+</script>
+{% endblock %}
+

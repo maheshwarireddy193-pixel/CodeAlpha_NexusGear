@@ -1,0 +1,329 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}NexusGear | My Shopping Cart{% endblock %}
+
+{% block content %}
+<!-- BREADCRUMBS BREADCRUMB -->
+<div class="breadcrumbs-wrapper" id="cart-breadcrumbs">
+    <div class="container">
+        <div class="breadcrumbs">
+            <a href="{% url 'home' %}" class="breadcrumb-item">Home</a>
+            <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+            <span class="breadcrumb-item active">Shopping Blueprints Cart</span>
+        </div>
+    </div>
+</div>
+
+<div class="container" style="padding-bottom: 80px;">
+    <h1 class="section-title" style="margin-top: 40px; margin-bottom: 30px;">Your Shopping <span>Cart</span></h1>
+
+    {% if cart_items %}
+        <div class="cart-layout" id="shopping-cart-layout-container">
+            <!-- LEFT: PRODUCTS LIST -->
+            <div class="cart-table-card" id="cart-table-panel">
+                <table class="cart-table" id="shopping-cart-items-table">
+                    <thead>
+                        <tr>
+                            <th>Blueprint Details</th>
+                            <th>Unit Price</th>
+                            <th>Quantity</th>
+                            <th>Subtotal</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cart-tbody-list">
+                        {% for item in cart_items %}
+                            <tr id="cart-row-{{ item.id }}" class="js-cart-item-row" data-item-id="{{ item.id }}">
+                                <!-- Details -->
+                                <td>
+                                    <div class="cart-product-cell">
+                                        <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="cart-prod-img">
+                                        <div>
+                                            <span class="cart-prod-brand">{{ item.product.brand }}</span>
+                                            <a href="{% url 'product_detail' item.product.slug %}" style="display: block;">
+                                                <h4 class="cart-prod-name">{{ item.product.name }}</h4>
+                                            </a>
+                                            <span style="font-size: 12px; color: var(--color-text-muted);">Stock: {{ item.product.stock }} available</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                
+                                <!-- Unit Price -->
+                                <td>
+                                    <span class="cart-price">₹<span class="js-unit-price">{{ item.product.price }}</span></span>
+                                </td>
+                                
+                                <!-- Qty Selector -->
+                                <td>
+                                    <div class="quantity-selector" style="height: 38px;">
+                                        <button class="qty-btn js-cart-qty-minus" data-item-id="{{ item.id }}">-</button>
+                                        <input type="text" value="{{ item.quantity }}" class="qty-input js-cart-qty-input" data-item-id="{{ item.id }}" readonly style="width: 40px;" id="qty-input-{{ item.id }}">
+                                        <button class="qty-btn js-cart-qty-plus" data-item-id="{{ item.id }}">+</button>
+                                    </div>
+                                </td>
+                                
+                                <!-- Line Total -->
+                                <td>
+                                    <span class="cart-price" style="color: var(--color-accent-dim);">₹<span class="js-line-total-val" id="line-total-{{ item.id }}">{{ item.total_price }}</span></span>
+                                </td>
+                                
+                                <!-- Delete Item -->
+                                <td>
+                                    <button class="cart-remove-btn js-cart-remove" data-item-id="{{ item.id }}" data-product-name="{{ item.product.name }}" title="Delete blueprint from cart">
+                                        <i class="far fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- RIGHT: ORDER SUMMARY -->
+            <div class="summary-card" id="cart-summary-panel">
+                <h3 class="summary-title">Order Inventory Summary</h3>
+                
+                <!-- Coupon Input Section -->
+                <div class="coupon-section">
+                    <h4 class="filter-title" style="font-size: 14px; margin-bottom: 8px;">Apply Discount Blueprint</h4>
+                    <form id="coupon-form" class="coupon-form-grid">
+                        <input type="text" placeholder="e.g. NEXUS10" class="coupon-input" id="coupon-code-field" value="{{ request.session.coupon_code|default:'' }}">
+                        <button type="submit" class="btn btn-primary btn-sm" id="coupon-apply-btn">Apply</button>
+                    </form>
+                    <span id="coupon-feedback" style="font-size: 12px; font-weight: 600; display: block; margin-top: 8px;"></span>
+                </div>
+
+                <div class="summary-rows">
+                    <div class="summary-row">
+                        <span>Items Subtotal</span>
+                        <span id="summary-subtotal" style="font-weight: 600;">₹{{ subtotal }}</span>
+                    </div>
+                    <div class="summary-row" id="coupon-discount-row" style="color: var(--color-success); {% if not request.session.coupon_code %}display: none;{% endif %}">
+                        <span>Discount Code Applied</span>
+                        <span id="summary-discount">-&#8377;0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Shipping Logistics</span>
+                        <span style="color: var(--color-success); font-weight: 700;">FREE SECURE</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Grand Total</span>
+                        <span id="summary-total" style="color: var(--color-accent-dim);">₹{{ subtotal }}</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <a href="{% url 'checkout' %}" class="btn btn-cyan btn-block" id="cart-proceed-checkout-btn">
+                        <i class="fas fa-lock"></i> Secure Checkout
+                    </a>
+                    <a href="{% url 'product_list' %}" class="btn btn-outline btn-block" style="text-align: center;" id="cart-continue-shopping-btn">
+                        Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- EMPTY CART STATE -->
+        <div class="empty-bag-card" id="cart-empty-bag-card">
+            <i class="fas fa-shopping-cart empty-bag-icon"></i>
+            <h2 class="confirm-title" style="font-size: 24px;">Your Shopping Cart is Empty</h2>
+            <p class="confirm-desc" style="max-width: 450px; margin: 10px auto 24px auto;">You haven't added any premium gaming gear blueprints to your cart drawer yet. Explore our high-end armory catalogs to load your setup!</p>
+            <a href="{% url 'product_list' %}" class="btn btn-cyan" id="cart-shop-now-btn">Shop Esports Blueprints Now</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Quantity Adjustments Page-level Hooks
+    const cartTable = document.getElementById('shopping-cart-items-table');
+    if (cartTable) {
+        // Quantities plus
+        cartTable.addEventListener('click', async (e) => {
+            const plusBtn = e.target.closest('.js-cart-qty-plus');
+            const minusBtn = e.target.closest('.js-cart-qty-minus');
+            
+            if (!plusBtn && !minusBtn) return;
+            
+            const itemId = plusBtn ? plusBtn.dataset.itemId : minusBtn.dataset.itemId;
+            const action = plusBtn ? 'increase' : 'decrease';
+            const input = document.getElementById(`qty-input-${itemId}`);
+            const lineVal = document.getElementById(`line-total-${itemId}`);
+            
+            try {
+                const response = await fetch(`/api/cart/update/?item_id=${itemId}&action=${action}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update input value
+                    input.value = data.item_qty;
+                    // Update item row subtotal
+                    lineVal.textContent = data.item_total.toFixed(2);
+                    // Update Page Subtotal & Totals
+                    document.getElementById('summary-subtotal').textContent = `₹${data.cart_subtotal.toFixed(2)}`;
+                    
+                    // Update Nav badges
+                    const cartBadge = document.querySelector('.js-cart-badge');
+                    if (cartBadge) {
+                        cartBadge.textContent = data.cart_count;
+                        cartBadge.style.display = data.cart_count > 0 ? 'flex' : 'none';
+                    }
+                    
+                    // Update drawer subtotal
+                    const drawerSubtotal = document.getElementById('drawer-subtotal-val');
+                    if (drawerSubtotal) drawerSubtotal.textContent = `₹${data.cart_subtotal.toFixed(2)}`;
+                    
+                    // Recalculate Coupon in case coupon is active
+                    reapplyCoupon();
+                } else {
+                    window.showToast(data.message, 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                window.showToast('Failed to update quantity.', 'error');
+            }
+        });
+        
+        // 2. Remove Row Handler
+        cartTable.addEventListener('click', async (e) => {
+            const deleteBtn = e.target.closest('.js-cart-remove');
+            if (!deleteBtn) return;
+            
+            const itemId = deleteBtn.dataset.itemId;
+            const prodName = deleteBtn.dataset.productName;
+            
+            // Invoke custom glassmorphism modal confirm box
+            const confirmed = await window.customConfirm(
+                'Remove Blueprint',
+                `Are you sure you want to discard the '${prodName}' blueprint from your cart drawer?`
+            );
+            
+            if (!confirmed) return;
+            
+            try {
+                const response = await fetch(`/api/cart/remove/?item_id=${itemId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Fade row out
+                    const row = document.getElementById(`cart-row-${itemId}`);
+                    row.style.transition = 'all 0.4s ease-out';
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateX(-20px)';
+                    
+                    setTimeout(() => {
+                        row.remove();
+                        // Check if cart is now empty
+                        const remainingRows = document.querySelectorAll('.js-cart-item-row');
+                        if (remainingRows.length === 0) {
+                            window.location.reload(); // Re-render empty state
+                        }
+                    }, 400);
+                    
+                    // Update Page Subtotal & Totals
+                    document.getElementById('summary-subtotal').textContent = `₹${data.cart_subtotal.toFixed(2)}`;
+                    
+                    // Update Nav badges
+                    const cartBadge = document.querySelector('.js-cart-badge');
+                    if (cartBadge) {
+                        cartBadge.textContent = data.cart_count;
+                        cartBadge.style.display = data.cart_count > 0 ? 'flex' : 'none';
+                    }
+                    
+                    // Update drawer subtotal
+                    const drawerSubtotal = document.getElementById('drawer-subtotal-val');
+                    if (drawerSubtotal) drawerSubtotal.textContent = `₹${data.cart_subtotal.toFixed(2)}`;
+                    
+                    // Update drawer item list
+                    const drawerRow = document.getElementById(`drawer-item-row-${itemId}`);
+                    if (drawerRow) drawerRow.remove();
+                    
+                    window.showToast(data.message, 'success');
+                    reapplyCoupon();
+                } else {
+                    window.showToast(data.message, 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                window.showToast('Failed to remove item.', 'error');
+            }
+        });
+    }
+
+    // 3. Coupon form handler
+    const couponForm = document.getElementById('coupon-form');
+    if (couponForm) {
+        couponForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const code = document.getElementById('coupon-code-field').value.trim();
+            const subtotalText = document.getElementById('summary-subtotal').textContent.replace('₹', '');
+            const subtotalVal = parseFloat(subtotalText);
+            
+            const feedback = document.getElementById('coupon-feedback');
+            
+            try {
+                const response = await fetch(`/api/cart/coupon/?coupon_code=${encodeURIComponent(code)}&subtotal=${subtotalVal}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const discountRow = document.getElementById('coupon-discount-row');
+                    const discountText = document.getElementById('summary-discount');
+                    const grandTotalText = document.getElementById('summary-total');
+                    
+                    if (data.discount > 0) {
+                        discountRow.style.display = 'flex';
+                        discountText.textContent = `-₹${data.discount.toFixed(2)}`;
+                        grandTotalText.textContent = `₹${data.total.toFixed(2)}`;
+                        
+                        feedback.textContent = data.message;
+                        feedback.style.color = 'var(--color-success)';
+                        window.showToast(data.message, 'success');
+                    } else {
+                        discountRow.style.display = 'none';
+                        grandTotalText.textContent = `₹${data.total.toFixed(2)}`;
+                        
+                        feedback.textContent = data.message;
+                        feedback.style.color = 'var(--color-text-muted)';
+                    }
+                } else {
+                    feedback.textContent = data.message;
+                    feedback.style.color = 'var(--color-danger)';
+                    window.showToast(data.message, 'error');
+                    
+                    // Hide discount row and reset totals
+                    document.getElementById('coupon-discount-row').style.display = 'none';
+                    document.getElementById('summary-total').textContent = `₹${subtotalVal.toFixed(2)}`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+        
+        // Auto trigger coupon on load if active in session
+        const initialCode = document.getElementById('coupon-code-field').value.trim();
+        if (initialCode) {
+            couponForm.dispatchEvent(new Event('submit'));
+        }
+    }
+    
+    // Function to re-apply coupon whenever cart quantities change
+    async function reapplyCoupon() {
+        const couponForm = document.getElementById('coupon-form');
+        if (couponForm) {
+            const code = document.getElementById('coupon-code-field').value.trim();
+            if (code) {
+                couponForm.dispatchEvent(new Event('submit'));
+            } else {
+                // Just match Grand total with Subtotal
+                const subtotalText = document.getElementById('summary-subtotal').textContent;
+                document.getElementById('summary-total').textContent = subtotalText;
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
+
